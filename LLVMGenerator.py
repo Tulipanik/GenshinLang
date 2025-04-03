@@ -25,8 +25,18 @@ class LLVMGenerator:
         self.builder = ir.IRBuilder(block)
         self.voidptr_ty = ir.IntType(8).as_pointer()
 
-        strp_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 5), name="strp")
-        strp_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 5), bytearray(b"%lf\n\0"))
+        fmt_str = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 4), name="fmt_str")
+        fmt_str.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%s\n\0"))
+
+        fmt_int_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 4), name="fmt_int")
+        fmt_int_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%d\n\0"))
+
+        fmt_float_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 4), name="fmt_float")
+        fmt_float_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%f\n\0"))
+
+        fmt_double_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 5), name="fmt_double")
+        fmt_double_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 5), bytearray(b"%lf\n\0"))
+
 
     def _create_execution_engine(self):
         target = self.binding.Target.from_default_triple()
@@ -58,17 +68,24 @@ class LLVMGenerator:
                     else:
                         print(f"ERROR: Variable '{var_name}' redeclared!")
                 if var_name in self.variables:
-                    value = node.elemToAssign().getText()
                     self.generate_variable_assignment(var_name, node.elemToAssign())
                 else:
                     print(f"ERROR: Assignment to undeclared variable '{var_name}'!")
 
+
             elif isinstance(node, GenshinLangParser.PrintStatContext):
-                var_name = node.IDENTIFIER().getText()
-                if var_name in self.variables:
-                    self.generate_print_statement(var_name)
-                else:
-                    print(f"ERROR: Printing undeclared variable '{var_name}'")
+                self.generate_print_statement(node.printLiteral())
+                # if node.IDENTIFIER():
+                #     var_name = node.IDENTIFIER().getText() | ""
+                #     value = ""
+                #     if not(self.variables[var_name]):
+                #         print(f"ERROR: Assignment to undeclared variable '{var_name}'!")
+                #         return
+                    
+                # elif node.STRING():
+                #     value = node.STRING().getText()
+
+                    # self.generate_print_statement(var_name, value)
 
             elif isinstance(node, GenshinLangParser.ExpressionContext):
                 self.generate_expression(node)
@@ -100,14 +117,43 @@ class LLVMGenerator:
         
         self.builder.store(expression_value, ptr)
 
-    def generate_print_statement(self, ident):
-        ptr = self.variables[ident]
-        val = self.builder.load(ptr)
-        strp_global = self.module.globals.get("strp")
-        format_ptr = self.builder.gep(strp_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
-        self.builder.call(self.printf, [format_ptr, val])
+    def generate_print_statement(self, value: GenshinLangParser.PrintLiteralContext):
+        # if value:
+        #     val, strp_global = self._keep_string_in_memory(value)
+        # else:
+        #     ptr = self.variables[ident]
+        #     val = self.builder.load(ptr)
+        #     strp_global = self.module.globals.get("fmt_int")
+
+        print(list(value.getChildren()))
+        for val in value.getChildren(): 
+            print(val)
+            if value.STRING():
+                val = self._keep_string_in_memory(value.STRING(0).getText())
+                strp_global = self.module.globals.get("fmt_str")
+            elif value.IDENTIFIER():
+                print("elo")
+            elif value.expression():
+                print("eloo")
+                val = self.generate_expression(value.expression())
+                strp_global = self.module.globals.get("fmt_double")
+            else:
+                return
+            format_ptr = self.builder.gep(strp_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+            self.builder.call(self.printf, [format_ptr, val])
+            
         self.builder.call(self.fflush, [ir.Constant(ir.IntType(8).as_pointer(), None)])
 
+    def _keep_string_in_memory(self, value):
+        str_len = len(value) + 1
+        
+        str_alloca = self.builder.alloca(ir.ArrayType(ir.IntType(8), str_len))
+
+        for i, byte in enumerate(value.encode("utf8") + b"\0"):
+            ptr = self.builder.gep(str_alloca, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), i)])
+            self.builder.store(ir.Constant(ir.IntType(8), byte), ptr)
+        return str_alloca
+    
     def generate_expression(self, ctx: GenshinLangParser.ExpressionContext):
         value1 = self.generate_term(ctx.term(0))
         for i in range(1, len(ctx.term())):

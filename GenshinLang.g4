@@ -27,7 +27,9 @@ array: '[' expression (',' expression)* ']';
 matrix: '[' row (',' row)* ']';
 row: '[' expression (',' expression)* ']';
 
-printStat: PRINT '(' IDENTIFIER ')';
+printLiteral: (STRING | IDENTIFIER | expression)*;
+
+printStat: PRINT '(' printLiteral ')';
 readStat: READ '(' IDENTIFIER ')';
 
 elemToAssign: expression | array | matrix;
@@ -44,7 +46,6 @@ factor:
 	| IDENTIFIER
 	| IDENTIFIER '[' expression ']'
 	| IDENTIFIER '[' expression ']' '[' expression ']';
-
 
 // Lexer
 TYPE: 'int' | 'float' | 'double' | 'boolean';
