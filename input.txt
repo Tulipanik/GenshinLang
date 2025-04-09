@@ -14,7 +14,6 @@ y = 3.1
 int a = 4
 double b = 3.02
 
-
 // operacje wejscia - wyjscia
 print("witam")
 print(x)

@@ -80,12 +80,13 @@ class LLVMGenerator():
                     if var_name not in self.variables:
                         self.generate_variable_declaration(var_name, node.TYPE().getText())
                     else:
-                        print(f"ERROR: Variable '{var_name}' redeclared!")
+                        print(f"Redeklaracja zmiennej '{var_name}'!")
+                        sys.exit(1)
                 if var_name in self.variables:
                     self.generate_variable_assignment(var_name, node.elemToAssign())
                 else:
-                    print(f"ERROR: Assignment to undeclared variable '{var_name}'!")
-
+                    print(f"Przypisanie do niezadeklarowanej zmiennej '{var_name}'!")
+                    sys.exit(1)
 
             elif isinstance(node, GenshinLangParser.PrintStatContext):
                 self.generate_print_statement(node)
@@ -108,8 +109,8 @@ class LLVMGenerator():
     def generate_variable_assignment(self, ident, value: GenshinLangParser.ElemToAssignContext):
         ptr = self.variables.get(ident)
         if ptr is None:
-            print(f"ERROR: Variable {ident} not declared!")
-            return
+            print(f"Zmienna '{ident}' jest niezadeklarowana!")
+            sys.exit(1)
 
         expression_value = self.generate_expression(value.expression())
 
@@ -119,8 +120,8 @@ class LLVMGenerator():
             expression_value = self._convert_double_to_int(expression_value)
 
         if expression_value is None:
-            print(f"ERROR: Failed to generate expression for {value}")
-            return
+            print(f"Błąd ewaluacji eksprecji '{value}'!")
+            sys.exit(1)
         
         self.builder.store(expression_value, ptr)
 
@@ -145,7 +146,6 @@ class LLVMGenerator():
             text = child.getText()
 
             if child.STRING():
-                print("siema")
                 val = self._keep_string_in_memory(text.strip('"'))
                 fmt_global = self.module.globals.get("fmt_str")
                 format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
@@ -165,8 +165,8 @@ class LLVMGenerator():
             elif child.expression():
                 result = self.generate_expression(child.expression())
                 if result is None:
-                    print("ERROR: generate_expression zwróciło None dla:", child.getText())
-                    continue  # lub obsłuż ten przypadek inaczej
+                    print("Ewaluacja ekspresji zwróciła None!")
+                    sys.exit(1)
                 fmt_global = self.module.globals.get("fmt_double")
                 if isinstance(result.type, ir.IntType):
                     fmt_global = self.module.globals.get("fmt_int")
@@ -214,8 +214,8 @@ class LLVMGenerator():
             value2 = self.generate_term(ctx.term(i))
 
             if value2 is None:
-                print(f"ERROR: Nie udało się wygenerować drugiego operandu dla operatora '{operator}'.")
-                return value1
+                print(f"Nie udało się wygenerować drugiego operandu dla operatora '{operator}'!")
+                sys.exit(1)
 
             value1, value2 = self._check_type_compability(value1, value2)
 
@@ -243,7 +243,7 @@ class LLVMGenerator():
                 if operator == "*":
                     value1 = self.builder.mul(value1, value2, name="multmp")
                 elif operator == "/":
-                    value1 = self.builder.sdiv(value1, value2, name="divtmp")  # Używam sdiv dla dzielenia signed int
+                    value1 = self.builder.sdiv(value1, value2, name="divtmp")
             else:
                 if operator == "*":
                     value1 = self.builder.fmul(value1, value2, name="multmp")
@@ -263,8 +263,8 @@ class LLVMGenerator():
             return self.builder.load(ptr)
         
         else:
-            print("ERROR: Nieobsłużony typ czynnika!")
-        return None
+            print("Nieobsłużony typ czynnika!")
+            sys.exit(1)
 
     def _check_type_compability(self, value1, value2):
         type1 = value1.type
