@@ -5,7 +5,7 @@ from llvmlite import ir, binding
 from generated.GenshinLangParser import GenshinLangParser
 from generated.GenshinLangListener import GenshinLangListener
 
-class LLVMGenerator:
+class LLVMGenerator():
     def __init__(self):
         self.binding = binding
         self.binding.initialize()
@@ -14,6 +14,7 @@ class LLVMGenerator:
         self._config_llvm()
         self._create_execution_engine()
         self._declare_print_function()
+        self._declare_scanf_function()
         self.variables = {}
 
     def _config_llvm(self):
@@ -26,17 +27,19 @@ class LLVMGenerator:
         self.voidptr_ty = ir.IntType(8).as_pointer()
 
         fmt_str = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 4), name="fmt_str")
-        fmt_str.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%s\n\0"))
+        fmt_str.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%s\x20\0"))
 
         fmt_int_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 4), name="fmt_int")
-        fmt_int_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%d\n\0"))
+        fmt_int_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%d\x20\0"))
 
         fmt_float_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 4), name="fmt_float")
-        fmt_float_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%f\n\0"))
+        fmt_float_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 4), bytearray(b"%f\x20\0"))
 
         fmt_double_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 5), name="fmt_double")
-        fmt_double_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 5), bytearray(b"%lf\n\0"))
+        fmt_double_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 5), bytearray(b"%lf\x20\0"))
 
+        fmt_newline_global = ir.GlobalVariable(self.module, ir.ArrayType(ir.IntType(8), 2), name="fmt_newline")
+        fmt_newline_global.initializer = ir.Constant(ir.ArrayType(ir.IntType(8), 2), bytearray(b"\n\0"))
 
     def _create_execution_engine(self):
         target = self.binding.Target.from_default_triple()
@@ -53,6 +56,10 @@ class LLVMGenerator:
         fflush_ty = ir.FunctionType(ir.IntType(32), [self.voidptr_ty])
         self.fflush = ir.Function(self.module, fflush_ty, name="fflush")
 
+    def _declare_scanf_function(self):
+        scanf_ty = ir.FunctionType(ir.IntType(32), [self.voidptr_ty], var_arg=True)
+        self.scanf = ir.Function(self.module, scanf_ty, name="scanf")
+
     def generate(self, ast):
         self._generate_from_ast(ast)
         self.builder.ret(ir.Constant(ir.IntType(32), 0))
@@ -60,6 +67,13 @@ class LLVMGenerator:
 
     def _generate_from_ast(self, ast):
         for node in ast:
+            if isinstance(node, GenshinLangParser.VariableContext):
+                var_name = node.IDENTIFIER().getText()
+                if var_name in self.variables:
+                    print(f'Zmienna {var_name} istnieje już w zakresie!')
+                    sys.exit(1)
+                self.generate_variable_declaration(var_name, node.TYPE().getText())
+
             if isinstance(node, GenshinLangParser.VariableAssignContext):
                 var_name = node.IDENTIFIER().getText()
                 if node.TYPE(): 
@@ -74,21 +88,13 @@ class LLVMGenerator:
 
 
             elif isinstance(node, GenshinLangParser.PrintStatContext):
-                self.generate_print_statement(node.printLiteral())
-                # if node.IDENTIFIER():
-                #     var_name = node.IDENTIFIER().getText() | ""
-                #     value = ""
-                #     if not(self.variables[var_name]):
-                #         print(f"ERROR: Assignment to undeclared variable '{var_name}'!")
-                #         return
-                    
-                # elif node.STRING():
-                #     value = node.STRING().getText()
-
-                    # self.generate_print_statement(var_name, value)
+                self.generate_print_statement(node)
 
             elif isinstance(node, GenshinLangParser.ExpressionContext):
                 self.generate_expression(node)
+
+            elif isinstance(node, GenshinLangParser.ReadStatContext):
+                self.read(node)
 
     def generate_variable_declaration(self, ident, type):
         if type == 'int':
@@ -106,6 +112,7 @@ class LLVMGenerator:
             return
 
         expression_value = self.generate_expression(value.expression())
+
         if isinstance(self.variables[ident].type.pointee, ir.FloatType):
             expression_value = self._convert_double_to_float(expression_value)
         elif isinstance(self.variables[ident].type.pointee, ir.IntType):
@@ -117,32 +124,72 @@ class LLVMGenerator:
         
         self.builder.store(expression_value, ptr)
 
-    def generate_print_statement(self, value: GenshinLangParser.PrintLiteralContext):
-        # if value:
-        #     val, strp_global = self._keep_string_in_memory(value)
-        # else:
-        #     ptr = self.variables[ident]
-        #     val = self.builder.load(ptr)
-        #     strp_global = self.module.globals.get("fmt_int")
+    def read(self, node):
+        variable = node.IDENTIFIER().getText()
 
-        print(list(value.getChildren()))
-        for val in value.getChildren(): 
-            print(val)
-            if value.STRING():
-                val = self._keep_string_in_memory(value.STRING(0).getText())
-                strp_global = self.module.globals.get("fmt_str")
-            elif value.IDENTIFIER():
-                print("elo")
-            elif value.expression():
-                print("eloo")
-                val = self.generate_expression(value.expression())
-                strp_global = self.module.globals.get("fmt_double")
+        if variable not in self.variables:
+            self.generate_variable_declaration(variable, 'double')
+
+        var_ptr = self.variables[variable]
+
+        fmt_global = self.module.globals.get("fmt_double")
+        format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+
+        self.builder.call(self.scanf, [format_ptr, var_ptr])
+        self._print_empty_line()
+
+       
+
+    def generate_print_statement(self, print_stat_ctx: GenshinLangParser.PrintStatContext):
+        for child in print_stat_ctx.printElement():
+            text = child.getText()
+
+            if child.STRING():
+                print("siema")
+                val = self._keep_string_in_memory(text.strip('"'))
+                fmt_global = self.module.globals.get("fmt_str")
+                format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                self.builder.call(self.printf, [format_ptr, val])
+
+            elif child.IDENTIFIER():
+                if text in self.variables:
+                    val = self.builder.load(self.variables[text])
+                    fmt_global = self.module.globals.get("fmt_double")
+                    if isinstance(val.type, ir.IntType):
+                        fmt_global = self.module.globals.get("fmt_int")
+                    elif isinstance(val.type, ir.FloatType):
+                        val = self._convert_float_to_double(val)
+                    format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                    self.builder.call(self.printf, [format_ptr, val])
+
+            elif child.expression():
+                result = self.generate_expression(child.expression())
+                if result is None:
+                    print("ERROR: generate_expression zwróciło None dla:", child.getText())
+                    continue  # lub obsłuż ten przypadek inaczej
+                fmt_global = self.module.globals.get("fmt_double")
+                if isinstance(result.type, ir.IntType):
+                    fmt_global = self.module.globals.get("fmt_int")
+                elif isinstance(result.type, ir.FloatType):
+                    result = self._convert_float_to_double(result)
+                format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                self.builder.call(self.printf, [format_ptr, result])
+
+
             else:
-                return
-            format_ptr = self.builder.gep(strp_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
-            self.builder.call(self.printf, [format_ptr, val])
-            
-        self.builder.call(self.fflush, [ir.Constant(ir.IntType(8).as_pointer(), None)])
+                if re.match(r'^-?\d+\.\d+$', text):
+                    value = ir.Constant(ir.FloatType, text)
+                    fmt_global = self.module.globals.get("fmt_float")
+                    format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                    self.builder.call(self.printf, [format_ptr, value])
+
+                if re.match(r'^-?\d+$', text):
+                    value = ir.Constant(ir.IntType(32), text)
+                    fmt_global = self.module.globals.get("fmt_int")
+                    format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+                    self.builder.call(self.printf, [format_ptr, value])
+
+        self._print_empty_line()
 
     def _keep_string_in_memory(self, value):
         str_len = len(value) + 1
@@ -154,17 +201,34 @@ class LLVMGenerator:
             self.builder.store(ir.Constant(ir.IntType(8), byte), ptr)
         return str_alloca
     
+    def _print_empty_line(self):
+        fmt_newline_global = self.module.globals.get("fmt_newline")
+        format_ptr = self.builder.gep(fmt_newline_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
+        self.builder.call(self.printf, [format_ptr])
+        self.builder.call(self.fflush, [ir.Constant(ir.IntType(8).as_pointer(), None)])
+    
     def generate_expression(self, ctx: GenshinLangParser.ExpressionContext):
         value1 = self.generate_term(ctx.term(0))
         for i in range(1, len(ctx.term())):
             operator = list(ctx.getChildren())[2 * i - 1].getText()
             value2 = self.generate_term(ctx.term(i))
+
+            if value2 is None:
+                print(f"ERROR: Nie udało się wygenerować drugiego operandu dla operatora '{operator}'.")
+                return value1
+
             value1, value2 = self._check_type_compability(value1, value2)
-            
-            if operator == "+":
-                value1 = self.builder.fadd(value1, value2, name="addtmp")
-            elif operator == "-":
-                value1 = self.builder.fsub(value1, value2, name="subtmp")
+
+            if isinstance(value1.type, ir.IntType) and isinstance(value2.type, ir.IntType):
+                if operator == "+":
+                    value1 = self.builder.add(value1, value2, name="addtmp")
+                elif operator == "-":
+                    value1 = self.builder.sub(value1, value2, name="subtmp")
+            else:
+                if operator == "+":
+                    value1 = self.builder.fadd(value1, value2, name="addtmp")
+                elif operator == "-":
+                    value1 = self.builder.fsub(value1, value2, name="subtmp")
 
         return value1
 
@@ -174,19 +238,33 @@ class LLVMGenerator:
             operator = list(ctx.getChildren())[2 * i - 1].getText()
             value2 = self.generate_factor(ctx.factor(i))
             value1, value2 = self._check_type_compability(value1, value2)
-            if operator == "*":
-                value1 = self.builder.fmul(value1, value2, name="multmp")
-            elif operator == "/":
-                value1 = self.builder.fdiv(value1, value2, name="divtmp")
+
+            if isinstance(value1.type, ir.IntType) and isinstance(value2.type, ir.IntType):
+                if operator == "*":
+                    value1 = self.builder.mul(value1, value2, name="multmp")
+                elif operator == "/":
+                    value1 = self.builder.sdiv(value1, value2, name="divtmp")  # Używam sdiv dla dzielenia signed int
+            else:
+                if operator == "*":
+                    value1 = self.builder.fmul(value1, value2, name="multmp")
+                elif operator == "/":
+                    value1 = self.builder.fdiv(value1, value2, name="divtmp")
 
         return value1
 
+
     def generate_factor(self, ctx: GenshinLangParser.FactorContext):
-        if ctx.NUMBER():
+        if ctx.MINUS():
+            return ir.Constant(ir.DoubleType(), -1*float(ctx.NUMBER().getText()))
+        elif ctx.NUMBER():
             return ir.Constant(ir.DoubleType(), float(ctx.NUMBER().getText()))
         elif ctx.IDENTIFIER():
             ptr = self.variables[ctx.IDENTIFIER().getText()]
             return self.builder.load(ptr)
+        
+        else:
+            print("ERROR: Nieobsłużony typ czynnika!")
+        return None
 
     def _check_type_compability(self, value1, value2):
         type1 = value1.type

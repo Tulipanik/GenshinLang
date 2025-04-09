@@ -27,9 +27,10 @@ array: '[' expression (',' expression)* ']';
 matrix: '[' row (',' row)* ']';
 row: '[' expression (',' expression)* ']';
 
-printLiteral: (STRING | IDENTIFIER | expression)*;
+printStat: 'print' '(' printElement (',' printElement)* ')';
 
-printStat: PRINT '(' printLiteral ')';
+printElement: expression | STRING | IDENTIFIER;
+
 readStat: READ '(' IDENTIFIER ')';
 
 elemToAssign: expression | array | matrix;
@@ -41,8 +42,8 @@ expression: term ((PLUS | MINUS) term)*;
 term: factor ((MUL | DIV) factor)*;
 
 factor:
-	NUMBER
-	| STRING
+	MINUS NUMBER
+	| NUMBER
 	| IDENTIFIER
 	| IDENTIFIER '[' expression ']'
 	| IDENTIFIER '[' expression ']' '[' expression ']';
@@ -67,3 +68,4 @@ STRING: '"' ( '\\"' | ~'"')* '"';
 NUMBER: [0-9]+ ('.' [0-9]+)?;
 IDENTIFIER: [a-zA-Z0-9_]+;
 WS: [ \t\r\n]+ -> skip;
+COMMENT: '//' .*? '\r'? '\n' -> skip;

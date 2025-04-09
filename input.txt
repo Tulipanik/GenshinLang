@@ -1,4 +1,40 @@
-int z = 2
-double x = 3 / z + 2.0
+// deklaracje zmiennych
 
-print("siema" 3)
+int x
+float y
+int z
+
+// przypisanie zmiennych
+
+x = -2
+y = 3.1
+
+// deklaracja z przypisaniem zmiennej
+
+int a = 4
+double b = 3.02
+
+
+// operacje wejscia - wyjscia
+print("witam")
+print(x)
+print(a)
+z = x+a
+print(x+a)
+
+print("siema", a, x+b)
+
+print("Wczytaj zmienna c:")
+read(c)
+
+print(c)
+
+// obsluga operacji matematycznych
+print(2+2)
+print(2-3)
+print(2*2)
+print(6/2)
+
+print(2+2*2)
+
+print(z/3 + 4)
