@@ -4,13 +4,18 @@ from generated.GenshinLangLexer import GenshinLangLexer
 from generated.GenshinLangParser import GenshinLangParser
 from GenshinLangErrorListener import GenshinLangErrorListener
 from GenshinLangActions import GenshinASTBuilder
-from LLVMGenerator import LLVMGenerator
+# from LLVMGenerator import LLVMGenerator
+from generators.LLVMBase import LLVMBase
 
 def main():
     if len(sys.argv) < 2:
         print("Użycie: python main.py <ścieżka_do_pliku>")
         sys.exit(1)
 
+    if (sys.argv[1].endswith(".gl") == False):
+        print("Błędne rozszerzenie pliku. Użyj rozszerzenia .gl")
+        sys.exit(1)
+        
     input_stream = antlr4.FileStream(sys.argv[1])
 
     lexer = GenshinLangLexer(input_stream)
@@ -30,7 +35,8 @@ def main():
     walker = antlr4.ParseTreeWalker()
     walker.walk(ast_builder, tree)
 
-    ir_generator = LLVMGenerator()
+    # ir_generator = LLVMGenerator()
+    ir_generator = LLVMBase()
     llvm_ir = ir_generator.generate(ast_builder.ast)
 
     with open("output.ll", "w") as f:

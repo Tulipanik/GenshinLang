@@ -33,3 +33,6 @@ class GenshinASTBuilder(GenshinLangListener):
 
     def exitReadStat(self, ctx:GenshinLangParser.ReadStatContext):
         self.ast.append(ctx)
+
+    def exitIfStat(self, ctx: GenshinLangParser.IfStatContext):
+        self.ast.append(ctx)

@@ -12,7 +12,8 @@ statement:
 	| matrixAssign
 	| printStat
 	| readStat
-	| expressionStat;
+	| expressionStat
+	| ifStat;
 
 variable: TYPE IDENTIFIER;
 variableAssign: TYPE? IDENTIFIER ASSIGN elemToAssign;
@@ -41,6 +42,14 @@ expression: term ((PLUS | MINUS) term)*;
 
 term: factor ((MUL | DIV) factor)*;
 
+ifStat: 'if' '(' boolExpr ')' '{' statement* '}' ('else' '{' statement* '}')?;
+    
+boolExpr: boolExpr ('&&' | '||') boolExpr
+    | '!' boolExpr
+    | expression COMPARSION expression
+    | BOOLEAN
+    | IDENTIFIER;
+
 factor:
 	MINUS NUMBER
 	| NUMBER
@@ -52,12 +61,12 @@ factor:
 TYPE: 'int' | 'float' | 'double' | 'boolean';
 PRINT: 'print';
 READ: 'read';
-AND: '&&';
-OR: '||';
-XOR: '^';
+BOOLEAN: 'true' | 'false';
+COMPARSION: '==' | '!=' | '<' | '>' | '<=' | '>=';
+// AND: '&&';
+// OR: '||';
+// XOR: '^';
 NEG: '!';
-TRUE: 'true';
-FALSE: 'false';
 PLUS: '+';
 MINUS: '-';
 MUL: '*';
