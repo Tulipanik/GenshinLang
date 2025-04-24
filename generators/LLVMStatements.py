@@ -69,22 +69,29 @@ class LLVMStatementMixin:
         self._print_empty_line()
 
     def generate_if_statement(self, ctx: GenshinLangParser.IfStatContext):
-        print("siema")
-        # cond_val = self.generate_expression(ctx.ifStatement().condition().expression())
-        # zero = ir.Constant(cond_val.type, 0)
-        # if isinstance(cond_val.type, ir.IntType):
-        #     cmp = self.builder.icmp_signed("!=", cond_val, zero, name="ifcond")
-        # else:
-        #     cmp = self.builder.fcmp_ordered("!=", cond_val, zero, name="ifcond")
+        cond_value = self._bool_expr_evaluator(ctx.boolExpr())
+        then_block = self.func.append_basic_block(name="then")
+        else_block = self.func.append_basic_block(name="else") if ctx.block(1) else None
+        endif_block = self.func.append_basic_block(name="endif")
 
-        # then_bb = self.function.append_basic_block("then")
-        # cont_bb = self.function.append_basic_block("ifcont")
+        # Warunkowy skok
+        if else_block:
+            self.builder.cbranch(cond_value, then_block, else_block)
+        else:
+            self.builder.cbranch(cond_value, then_block, endif_block)
 
-        # self.builder.cbranch(cmp, then_bb, cont_bb)
-        # self.builder.position_at_start(then_bb)
+        # THEN
+        self.builder.position_at_start(then_block)
+        self.visit(ctx.block(0))  # odwiedzamy pierwszy blok (if)
+        if not self.builder.block.is_terminated:
+            self.builder.branch(endif_block)
 
-        # for inst in ctx.ifStatement().instruction():
-        #     self.visitInstruction(inst)
+        # ELSE (jeśli istnieje)
+        if else_block:
+            self.builder.position_at_start(else_block)
+            self.visit(ctx.block(1))  # odwiedzamy blok else
+            if not self.builder.block.is_terminated:
+                self.builder.branch(endif_block)
 
-        # self.builder.branch(cont_bb)
-        # self.builder.position_at_start(cont_bb)
+        # ENDIF
+        self.builder.position_at_start(endif_block)

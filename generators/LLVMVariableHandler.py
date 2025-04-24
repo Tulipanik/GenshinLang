@@ -10,12 +10,9 @@ class LLVMVariablesMixin:
             ptr = self.builder.alloca(ir.FloatType(), name=ident)
         elif type == 'double':
             ptr = self.builder.alloca(ir.DoubleType(), name=ident)
-        # self.variables[ident] = ptr
         self.scopeStack[-1][ident] = ptr
 
     def generate_variable_assignment(self, ident, value: GenshinLangParser.ElemToAssignContext):
-        # ptr = self.variables.get(ident)
-        # print(self.scopeStack[-1])
         ptr = self.scopeStack[-1][ident]
         print(ptr)
         if ptr is None:
