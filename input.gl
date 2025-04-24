@@ -59,7 +59,9 @@ if (!false ) {
 }
 
 if (a) {
-
+    if (true) {
+        
+    }
 }
 
 if (!a) {

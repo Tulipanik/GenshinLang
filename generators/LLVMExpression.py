@@ -55,8 +55,8 @@ class LLVMExpressionMixin:
         elif ctx.NUMBER():
             return ir.Constant(ir.DoubleType(), float(ctx.NUMBER().getText()))
         elif ctx.IDENTIFIER():
-            if ctx.IDENTIFIER().getText() in self.variables:
-                ptr = self.variables[ctx.IDENTIFIER().getText()]
+            if ctx.IDENTIFIER().getText() in self.scopeStack[-1]:
+                ptr = self.scopeStack[-1][ctx.IDENTIFIER().getText()]
                 return self.builder.load(ptr)
             else:
                 print(f"Zmienna '{ctx.IDENTIFIER().getText()}' użyta przed zadeklarowaniem!")

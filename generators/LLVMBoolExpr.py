@@ -30,6 +30,7 @@ class LLVMBoolExprMixin:
                 result = self.builder.icmp_unsigned("!=", val, ir.Constant(val.type, 0))
                 return self.builder.not_(result) if is_negated else result
             else:
+                print("Siema")
                 print(f"Zmienna '{var_name}' użyta przed zadeklarowaniem!")
                 sys.exit(1)
 

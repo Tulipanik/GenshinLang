@@ -42,7 +42,9 @@ expression: term ((PLUS | MINUS) term)*;
 
 term: factor ((MUL | DIV) factor)*;
 
-ifStat: 'if' '(' boolExpr ')' '{' statement* '}' ('else' '{' statement* '}')?;
+block: '{' statement* '}';
+
+ifStat: 'if' '(' boolExpr ')' block ('else' block)?;
     
 boolExpr: boolExpr ('&&' | '||') boolExpr
     | '!' boolExpr

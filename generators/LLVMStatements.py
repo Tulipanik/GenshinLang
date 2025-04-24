@@ -15,8 +15,8 @@ class LLVMStatementMixin:
                 self.builder.call(self.printf, [format_ptr, val])
 
             elif child.IDENTIFIER():
-                if text in self.variables:
-                    val = self.builder.load(self.variables[text])
+                if text in self.scopeStack[-1]:
+                    val = self.builder.load(self.scopeStack[-1][text])
                     fmt_global = self.module.globals.get("fmt_double")
                     if isinstance(val.type, ir.IntType):
                         fmt_global = self.module.globals.get("fmt_int")
@@ -57,10 +57,10 @@ class LLVMStatementMixin:
     def read(self, node):
         variable = node.IDENTIFIER().getText()
 
-        if variable not in self.variables:
+        if variable not in self.scopeStack[-1]:
             self.generate_variable_declaration(variable, 'double')
 
-        var_ptr = self.variables[variable]
+        var_ptr = self.scopeStack[-1][variable]
 
         fmt_global = self.module.globals.get("fmt_double")
         format_ptr = self.builder.gep(fmt_global, [ir.Constant(ir.IntType(32), 0), ir.Constant(ir.IntType(32), 0)])
@@ -68,22 +68,23 @@ class LLVMStatementMixin:
         self.builder.call(self.scanf, [format_ptr, var_ptr])
         self._print_empty_line()
 
-    def generate_if_statement(self, ctx: GenshinLangParser.InstructionContext):
-        cond_val = self.generate_expression(ctx.ifStatement().condition().expression())
-        zero = ir.Constant(cond_val.type, 0)
-        if isinstance(cond_val.type, ir.IntType):
-            cmp = self.builder.icmp_signed("!=", cond_val, zero, name="ifcond")
-        else:
-            cmp = self.builder.fcmp_ordered("!=", cond_val, zero, name="ifcond")
+    def generate_if_statement(self, ctx: GenshinLangParser.IfStatContext):
+        print("siema")
+        # cond_val = self.generate_expression(ctx.ifStatement().condition().expression())
+        # zero = ir.Constant(cond_val.type, 0)
+        # if isinstance(cond_val.type, ir.IntType):
+        #     cmp = self.builder.icmp_signed("!=", cond_val, zero, name="ifcond")
+        # else:
+        #     cmp = self.builder.fcmp_ordered("!=", cond_val, zero, name="ifcond")
 
-        then_bb = self.function.append_basic_block("then")
-        cont_bb = self.function.append_basic_block("ifcont")
+        # then_bb = self.function.append_basic_block("then")
+        # cont_bb = self.function.append_basic_block("ifcont")
 
-        self.builder.cbranch(cmp, then_bb, cont_bb)
-        self.builder.position_at_start(then_bb)
+        # self.builder.cbranch(cmp, then_bb, cont_bb)
+        # self.builder.position_at_start(then_bb)
 
-        for inst in ctx.ifStatement().instruction():
-            self.visitInstruction(inst)
+        # for inst in ctx.ifStatement().instruction():
+        #     self.visitInstruction(inst)
 
-        self.builder.branch(cont_bb)
-        self.builder.position_at_start(cont_bb)
+        # self.builder.branch(cont_bb)
+        # self.builder.position_at_start(cont_bb)

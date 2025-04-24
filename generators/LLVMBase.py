@@ -25,6 +25,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         self._declare_print_function()
         self._declare_scanf_function()
         self.variables = {}
+        self.scopeStack = [{}]
 
     def generate(self, ast):
         self._generate_from_ast(ast)
@@ -43,12 +44,12 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
             if isinstance(node, GenshinLangParser.VariableAssignContext):
                 var_name = node.IDENTIFIER().getText()
                 if node.TYPE(): 
-                    if var_name not in self.variables:
+                    if var_name not in self.scopeStack[-1]:
                         self.generate_variable_declaration(var_name, node.TYPE().getText())
                     else:
                         print(f"Redeklaracja zmiennej '{var_name}'!")
                         sys.exit(1)
-                if var_name in self.variables:
+                if var_name in  self.scopeStack[-1]:
                     self.generate_variable_assignment(var_name, node.elemToAssign())
                 else:
                     print(f"Przypisanie do niezadeklarowanej zmiennej '{var_name}'!")
