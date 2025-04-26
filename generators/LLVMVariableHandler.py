@@ -14,7 +14,6 @@ class LLVMVariablesMixin:
 
     def generate_variable_assignment(self, ident, value: GenshinLangParser.ElemToAssignContext):
         ptr = self.scopeStack[-1][ident]
-        print(ptr)
         if ptr is None:
             print(f"Zmienna '{ident}' jest niezadeklarowana!")
             sys.exit(1)

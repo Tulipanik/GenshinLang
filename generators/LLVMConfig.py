@@ -8,6 +8,7 @@ class LLVMConfigMixin:
         main_func = ir.Function(self.module, func_type, name="main")
         block = main_func.append_basic_block(name="entry")
         self.builder = ir.IRBuilder(block)
+        self.builder = ir.IRBuilder(block)
         self.voidptr_ty = ir.IntType(8).as_pointer()
 
         self._declare_format_string()

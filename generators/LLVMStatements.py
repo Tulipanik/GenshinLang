@@ -69,29 +69,29 @@ class LLVMStatementMixin:
         self._print_empty_line()
 
     def generate_if_statement(self, ctx: GenshinLangParser.IfStatContext):
-        cond_value = self._bool_expr_evaluator(ctx.boolExpr())
-        then_block = self.func.append_basic_block(name="then")
-        else_block = self.func.append_basic_block(name="else") if ctx.block(1) else None
-        endif_block = self.func.append_basic_block(name="endif")
+        cond = self._bool_expr_evaluator(ctx.boolExpr())
+        print(cond)
+        if cond is None:
+            print("Ewaluacja warunku zwróciła None!")
+            sys.exit(1)
 
-        # Warunkowy skok
+        then_block = self.builder.append_basic_block('if_then')
+        else_block = self.builder.append_basic_block('if_else') if ctx.block(1) else None
+        merge_block = self.builder.append_basic_block('if_end')
+
         if else_block:
-            self.builder.cbranch(cond_value, then_block, else_block)
+            self.builder.cbranch(cond, then_block, else_block)
         else:
-            self.builder.cbranch(cond_value, then_block, endif_block)
+            self.builder.cbranch(cond, then_block, merge_block)
 
-        # THEN
         self.builder.position_at_start(then_block)
-        self.visit(ctx.block(0))  # odwiedzamy pierwszy blok (if)
-        if not self.builder.block.is_terminated:
-            self.builder.branch(endif_block)
+        self.builder = ir.IRBuilder(then_block)
+        self._generate_from_ast(ctx.block(0).getChildren())
+        self.builder.branch(merge_block)
 
-        # ELSE (jeśli istnieje)
         if else_block:
             self.builder.position_at_start(else_block)
-            self.visit(ctx.block(1))  # odwiedzamy blok else
-            if not self.builder.block.is_terminated:
-                self.builder.branch(endif_block)
+            self._generate_from_ast(ctx.block(1).getChildren())
+            self.builder.branch(merge_block)
 
-        # ENDIF
-        self.builder.position_at_start(endif_block)
+        self.builder.position_at_start(merge_block)

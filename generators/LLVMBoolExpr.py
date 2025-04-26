@@ -9,11 +9,13 @@ class LLVMBoolExprMixin:
 
         # Case 1: BOOLEAN | expression COMPARSION BOOLEAN | expression
         if ctx.COMPARSION():
-            left = self._resolve_bool_operand(ctx.getChild(0))
-            right = self._resolve_bool_operand(ctx.getChild(2))
+            left = self.generate_expression(ctx.getChild(0))
+            right = self.generate_expression(ctx.getChild(2))
+            print(left, right)
             op = ctx.COMPARSION().getText()
 
             left, right = self._check_type_compability(left, right)
+            # print(left, right)
 
             if isinstance(left.type, ir.IntType):
                 cmp_result = self._int_comparison(op, left, right)
@@ -30,7 +32,6 @@ class LLVMBoolExprMixin:
                 result = self.builder.icmp_unsigned("!=", val, ir.Constant(val.type, 0))
                 return self.builder.not_(result) if is_negated else result
             else:
-                print("Siema")
                 print(f"Zmienna '{var_name}' użyta przed zadeklarowaniem!")
                 sys.exit(1)
 
