@@ -4,8 +4,10 @@ from generated.GenshinLangParser import GenshinLangParser
 
 class LLVMBoolExprMixin:
     def _bool_expr_evaluator(self, ctx: GenshinLangParser.BoolExprContext):
+        print(ctx.boolExpr())
         # NOT operator
         is_negated = ctx.NEG() is not None
+        print(is_negated)
 
         # Case 1: BOOLEAN | expression COMPARSION BOOLEAN | expression
         if ctx.COMPARSION():
@@ -27,8 +29,8 @@ class LLVMBoolExprMixin:
         # Case 2: IDENTIFIER or NEG IDENTIFIER
         elif ctx.IDENTIFIER():
             var_name = ctx.IDENTIFIER().getText()
-            if var_name in self.variables:
-                val = self.builder.load(self.variables[var_name])
+            if var_name in self.scopeStack[-1]:
+                val = self.builder.load(self.scopeStack[-1][var_name])
                 result = self.builder.icmp_unsigned("!=", val, ir.Constant(val.type, 0))
                 return self.builder.not_(result) if is_negated else result
             else:
@@ -37,8 +39,15 @@ class LLVMBoolExprMixin:
 
         # Case 3: BOOLEAN or NEG BOOLEAN
         elif ctx.BOOLEAN():
+            print("siemanko")
             bool_val = ctx.BOOLEAN().getText() == "true"
             result = ir.Constant(ir.IntType(1), int(not bool_val) if is_negated else int(bool_val))
+            print(result)
+            return result
+        
+        elif ctx.boolExpr():
+            value = self._bool_expr_evaluator(ctx.boolExpr()[-1]) == "i1 1"
+            result = ir.Constant(ir.IntType(1), int(not value) if is_negated else int(value))
             return result
 
         print("Nieobsłużony przypadek boolExpr!")

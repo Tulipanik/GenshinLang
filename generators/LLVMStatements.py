@@ -84,14 +84,15 @@ class LLVMStatementMixin:
         else:
             self.builder.cbranch(cond, then_block, merge_block)
 
-        self.builder.position_at_start(then_block)
-        self.builder = ir.IRBuilder(then_block)
-        self._generate_from_ast(ctx.block(0).getChildren())
+        self.builder.position_at_end(then_block)
+        statements = [i.getChild(0) for i in list(ctx.block(0).getChildren())]
+        self._generate_from_ast(statements)
         self.builder.branch(merge_block)
 
         if else_block:
-            self.builder.position_at_start(else_block)
-            self._generate_from_ast(ctx.block(1).getChildren())
+            self.builder.position_at_end(else_block)
+            statements = [i.getChild(0) for i in list(ctx.block(1).getChildren())]
+            self._generate_from_ast(statements)
             self.builder.branch(merge_block)
 
-        self.builder.position_at_start(merge_block)
+        self.builder.position_at_end(merge_block)

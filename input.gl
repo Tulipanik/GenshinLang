@@ -47,34 +47,36 @@ int a = 4
 
 if (false) {
     print("siema0")
+    print("elo")
 } else {
     print("siema1")
 }
 
-// if ( 4 == 3 ) {
-//     print("siema 1")
-// }
+if ( a == 3 ) {
+    print("siema 1")
+}
 
-// if (a + 1 == 3) {
-//     print("siema 2")
-// }
+if (a + 1 == 3) {
+    print("siema 2")
+}
 
-// if (true) {
-//     print("siema 3")
-// }
+if (true) {
+    print("siema 3")
+}
 
-// if (!false ) {
-    
-// }
+if (!false) {
+    print("siema 4") 
+}
 
-// if (a) {
-//     if (true) {
-        
-//     }
-// }
+if (a) {
+    print("0")
+    if (true) {  
+        print("heja")   
+    }
+}
 
 // if (!a) {
-
+//     print("heja2")
 // }
 
 print(a)

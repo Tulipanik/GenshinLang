@@ -34,6 +34,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
 
     def _generate_from_ast(self, ast):
         for node in ast:
+            # print(isinstance(node, GenshinLangParser.PrintStatContext))
             if isinstance(node, GenshinLangParser.VariableContext):
                 var_name = node.IDENTIFIER().getText()
                 if var_name in self.variables:
@@ -56,6 +57,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
                     sys.exit(1)
 
             elif isinstance(node, GenshinLangParser.PrintStatContext):
+                print("siema")
                 self.generate_print_statement(node)
 
             elif isinstance(node, GenshinLangParser.ExpressionContext):

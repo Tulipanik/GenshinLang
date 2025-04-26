@@ -47,7 +47,7 @@ block: '{' statement* '}';
 ifStat: 'if' '(' boolExpr ')' block ('else' block)?;
     
 boolExpr: boolExpr ('&&' | '||') boolExpr
-    | '!' boolExpr
+    | NEG boolExpr
     | expression COMPARSION expression
     | BOOLEAN
     | IDENTIFIER;
