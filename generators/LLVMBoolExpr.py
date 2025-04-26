@@ -4,20 +4,14 @@ from generated.GenshinLangParser import GenshinLangParser
 
 class LLVMBoolExprMixin:
     def _bool_expr_evaluator(self, ctx: GenshinLangParser.BoolExprContext):
-        print(ctx.boolExpr())
-        # NOT operator
         is_negated = ctx.NEG() is not None
-        print(is_negated)
 
-        # Case 1: BOOLEAN | expression COMPARSION BOOLEAN | expression
         if ctx.COMPARSION():
             left = self.generate_expression(ctx.getChild(0))
             right = self.generate_expression(ctx.getChild(2))
-            print(left, right)
             op = ctx.COMPARSION().getText()
 
             left, right = self._check_type_compability(left, right)
-            # print(left, right)
 
             if isinstance(left.type, ir.IntType):
                 cmp_result = self._int_comparison(op, left, right)
@@ -26,7 +20,6 @@ class LLVMBoolExprMixin:
 
             return self.builder.not_(cmp_result) if is_negated else cmp_result
 
-        # Case 2: IDENTIFIER or NEG IDENTIFIER
         elif ctx.IDENTIFIER():
             var_name = ctx.IDENTIFIER().getText()
             if var_name in self.scopeStack[-1]:
@@ -37,12 +30,9 @@ class LLVMBoolExprMixin:
                 print(f"Zmienna '{var_name}' użyta przed zadeklarowaniem!")
                 sys.exit(1)
 
-        # Case 3: BOOLEAN or NEG BOOLEAN
         elif ctx.BOOLEAN():
-            print("siemanko")
             bool_val = ctx.BOOLEAN().getText() == "true"
             result = ir.Constant(ir.IntType(1), int(not bool_val) if is_negated else int(bool_val))
-            print(result)
             return result
         
         elif ctx.boolExpr():
@@ -54,13 +44,12 @@ class LLVMBoolExprMixin:
         sys.exit(1)
 
     def _resolve_bool_operand(self, node):
-        # Check if it's BOOLEAN or expression
         if hasattr(node, 'BOOLEAN') and node.BOOLEAN():
             return ir.Constant(ir.IntType(1), int(node.BOOLEAN().getText() == "true"))
         elif hasattr(node, 'expression'):
             return self.generate_expression(node.expression())
         else:
-            return self.generate_expression(node)  # fallback
+            return self.generate_expression(node)
 
     def _int_comparison(self, op, left, right):
         if op == "==":

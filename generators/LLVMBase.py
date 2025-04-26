@@ -68,3 +68,6 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
             
             elif isinstance(node, GenshinLangParser.IfStatContext):
                 self.generate_if_statement(node)
+
+            elif isinstance(node, GenshinLangParser.WhileStatContext):
+                self.generate_while_statement(node)

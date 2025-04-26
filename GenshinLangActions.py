@@ -8,7 +8,7 @@ from generated.GenshinLangListener import GenshinLangListener
 class GenshinASTBuilder(GenshinLangListener):
     def __init__(self):
         self.generator = LLVMGenerator()
-        self.inside_if_stat = False
+        self.inside_if_stat = []
         self.ast = []
 
     def exitVariable(self, ctx:GenshinLangParser.VariableContext):
@@ -46,11 +46,16 @@ class GenshinASTBuilder(GenshinLangListener):
             self.ast.append(ctx)
 
     def enterIfStat(self, ctx: GenshinLangParser.IfStatContext):
-        if not (self.inside_if_stat):
-            self.ast.append(ctx)
-        self.inside_if_stat = True
+        self.ast.append(ctx)
+        self.inside_if_stat.append(True)
         
     def exitIfStat(self, ctx: GenshinLangParser.IfStatContext):
-        self.inside_if_stat = False
+        self.inside_if_stat.pop()
 
+    def enterWhileStat(self, ctx: GenshinLangParser.WhileStatContext):
+        self.ast.append(ctx)
+        self.inside_if_stat.append(True)
+
+    def exitWhileStat(self, ctx: GenshinLangParser.WhileStatContext):
+        self.inside_if_stat.pop()
     

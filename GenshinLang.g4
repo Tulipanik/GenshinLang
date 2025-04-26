@@ -13,7 +13,8 @@ statement:
 	| printStat
 	| readStat
 	| expressionStat
-	| ifStat;
+	| ifStat
+	| whileStat;
 
 variable: TYPE IDENTIFIER;
 variableAssign: TYPE? IDENTIFIER ASSIGN elemToAssign;
@@ -45,6 +46,8 @@ term: factor ((MUL | DIV) factor)*;
 block: '{' statement* '}';
 
 ifStat: 'if' '(' boolExpr ')' block ('else' block)?;
+
+whileStat: 'while' '(' boolExpr ')' block;
     
 boolExpr: boolExpr ('&&' | '||') boolExpr
     | NEG boolExpr

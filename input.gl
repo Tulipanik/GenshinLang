@@ -70,7 +70,7 @@ if (!false) {
 
 if (a) {
     print("0")
-    if (true) {  
+    if (false) {  
         print("heja")   
     }
 }
@@ -79,4 +79,10 @@ if (a) {
 //     print("heja2")
 // }
 
-print(a)
+while (a > 2) {
+    a = a - 1
+    int b = 3
+    print("siema2")
+    print(b)
+}
+

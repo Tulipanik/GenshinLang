@@ -96,3 +96,30 @@ class LLVMStatementMixin:
             self.builder.branch(merge_block)
 
         self.builder.position_at_end(merge_block)
+
+    def generate_while_statement(self, ctx: GenshinLangParser.WhileStatContext):
+        cond_block = self.builder.append_basic_block('while_cond')
+        body_block = self.builder.append_basic_block('while_body')
+        end_block = self.builder.append_basic_block('while_end')
+
+        self.builder.branch(cond_block)
+
+        self.builder.position_at_end(cond_block)
+        
+        cond = self._bool_expr_evaluator(ctx.boolExpr())
+        if cond is None:
+            print("Ewaluacja warunku zwróciła None!")
+            sys.exit(1)
+
+        self.builder.cbranch(cond, body_block, end_block)
+
+        self.builder.position_at_end(body_block)
+        
+        statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
+        self._generate_from_ast(statements)
+
+        self.builder.branch(cond_block)
+        self.builder.position_at_end(end_block)
+
+                
+
