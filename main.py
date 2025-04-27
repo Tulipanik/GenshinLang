@@ -34,9 +34,7 @@ def main():
     ast_builder = GenshinASTBuilder()
     walker = antlr4.ParseTreeWalker()
     walker.walk(ast_builder, tree)
-    print("AST:", ast_builder.ast)
 
-    # ir_generator = LLVMGenerator()
     ir_generator = LLVMBase()
     llvm_ir = ir_generator.generate(ast_builder.ast)
 

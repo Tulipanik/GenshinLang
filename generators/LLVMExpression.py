@@ -14,19 +14,50 @@ class LLVMExpressionMixin:
                 sys.exit(1)
 
             value1, value2 = self._check_type_compability(value1, value2)
-
-            if isinstance(value1.type, ir.IntType) and isinstance(value2.type, ir.IntType):
-                if operator == "+":
-                    value1 = self.builder.add(value1, value2, name="addtmp")
-                elif operator == "-":
-                    value1 = self.builder.sub(value1, value2, name="subtmp")
-            else:
-                if operator == "+":
-                    value1 = self.builder.fadd(value1, value2, name="addtmp")
-                elif operator == "-":
-                    value1 = self.builder.fsub(value1, value2, name="subtmp")
+            value1 = self.operation_maker(value1, value2, operator)
 
         return value1
+    
+    def generate_short_expression(self, ctx: GenshinLangParser.ShortExpressionContext):
+        ident = ctx.IDENTIFIER().getText()
+
+        if ident not in self.scopeStack[-1]:
+            print(f"Zmienna '{ident}' użyta przed zadeklarowaniem!")
+
+        value1 = self.builder.load(self.scopeStack[-1][ident])
+
+        print(ctx.elemToAssign())
+
+        if ctx.elemToAssign().expression():
+            value2 = self.generate_expression(ctx.elemToAssign().expression())
+            value1, value2 = self._check_type_compability(value1, value2)
+            match ctx.SHORTOP().getText():
+                case "+=":
+                    value1 = self.operation_maker(value1, value2, "+")
+                case "-=":
+                    value1 = self.operation_maker(value1, value2, "-")
+                case "*=":
+                    value1 = self.operation_maker(value1, value2, "*")
+                case "/=":
+                    value1 = self.operation_maker(value1, value2, "/")
+        else:
+            value1, value2 = self._check_type_compability(value1, ir.Constant(ir.IntType(32), 1))
+            match ctx.getChild(1).getText():
+                case "++":
+                    value1 = self.operation_maker(value1, value2, "+")
+                case "--":
+                    value1 = self.operation_maker(value1, value2, "-")
+
+
+        if isinstance(self.scopeStack[-1][ident].type.pointee, ir.FloatType):
+            value1 = self._convert_double_to_float(value1)
+        elif isinstance(self.scopeStack[-1][ident].type.pointee, ir.IntType):
+            value1 = self._convert_double_to_int(value1)
+        
+        self.builder.store(value1, self.scopeStack[-1][ident])
+
+
+
 
     def generate_term(self, ctx: GenshinLangParser.TermContext):
         value1 = self.generate_factor(ctx.factor(0))
@@ -35,16 +66,7 @@ class LLVMExpressionMixin:
             value2 = self.generate_factor(ctx.factor(i))
             value1, value2 = self._check_type_compability(value1, value2)
 
-            if isinstance(value1.type, ir.IntType) and isinstance(value2.type, ir.IntType):
-                if operator == "*":
-                    value1 = self.builder.mul(value1, value2, name="multmp")
-                elif operator == "/":
-                    value1 = self.builder.sdiv(value1, value2, name="divtmp")
-            else:
-                if operator == "*":
-                    value1 = self.builder.fmul(value1, value2, name="multmp")
-                elif operator == "/":
-                    value1 = self.builder.fdiv(value1, value2, name="divtmp")
+            value1 = self.operation_maker(value1, value2, operator)
 
         return value1
 
@@ -64,3 +86,25 @@ class LLVMExpressionMixin:
         else:
             print("Nieobsłużony typ czynnika!")
             sys.exit(1)
+
+    def operation_maker(self, value1, value2, operator):
+        if isinstance(value1.type, ir.IntType) and isinstance(value2.type, ir.IntType):
+            if operator == "+":
+                value1 = self.builder.add(value1, value2, name="addtmp")
+            elif operator == "-":
+                value1 = self.builder.sub(value1, value2, name="subtmp")
+            elif operator == "*":
+                value1 = self.builder.mul(value1, value2, name="multmp")
+            elif operator == "/":
+                value1 = self.builder.sdiv(value1, value2, name="divtmp")
+        else:
+            if operator == "+":
+                value1 = self.builder.fadd(value1, value2, name="addtmp")
+            elif operator == "-":
+                value1 = self.builder.fsub(value1, value2, name="subtmp")
+            elif operator == "*":
+                    value1 = self.builder.fmul(value1, value2, name="multmp")
+            elif operator == "/":
+                value1 = self.builder.fdiv(value1, value2, name="divtmp")
+
+        return value1

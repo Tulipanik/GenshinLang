@@ -121,5 +121,44 @@ class LLVMStatementMixin:
         self.builder.branch(cond_block)
         self.builder.position_at_end(end_block)
 
+    def generate_for_statement(self, ctx: GenshinLangParser.ForStatContext):
+        cond_block = self.builder.append_basic_block('for_cond')
+        body_block = self.builder.append_basic_block('for_body')
+        end_block = self.builder.append_basic_block('for_end')
+        
+        if ctx.variableAssign().TYPE():
+            generateVariableDeclaration = self.generate_variable_declaration(ctx.variableAssign().IDENTIFIER().getText(), ctx.variableAssign().TYPE().getText())
+            self.scopeStack[-1][ctx.variableAssign().IDENTIFIER().getText()] = generateVariableDeclaration
+
+        if ctx.variableAssign().ASSIGN():
+            self.generate_variable_assigntent(ctx.variableAssign().IDENTIFIER().getText(), ctx.elemToAssign())
+
+        self.builder.branch(cond_block)
+        self.builder.position_at_end(cond_block)
+
+        cond = self._bool_expr_evaluator(ctx.boolExpr())
+        if cond is None:
+            print("Ewaluacja warunku zwróciła None!")
+            sys.exit(1)
+
+        if ctx.variableAssign():
+            if self.expression().TYPE():
+                print(f"W tym miejscu nie można zadeklarować zmiennej!")
+                sys.exit(1)
+
+            self.generate_variable_assigment(ctx.variableAssign().IDENTIFIER().getText(), ctx.elemToAssign())
+        elif ctx.shortExpression():
+            self.generate_short_expression(ctx.shortExpression())
+
+        self.builder.cbranch(cond, body_block, end_block)
+
+        self.builder.position_at_end(body_block)
+        
+        statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
+        self._generate_from_ast(statements)
+
+        self.builder.branch(cond_block)
+        self.builder.position_at_end(end_block)
+
                 
 

@@ -13,8 +13,10 @@ statement:
 	| printStat
 	| readStat
 	| expressionStat
+	| shortExpression
 	| ifStat
-	| whileStat;
+	| whileStat
+	| forStat;
 
 variable: TYPE IDENTIFIER;
 variableAssign: TYPE? IDENTIFIER ASSIGN elemToAssign;
@@ -43,11 +45,20 @@ expression: term ((PLUS | MINUS) term)*;
 
 term: factor ((MUL | DIV) factor)*;
 
+shortExpression: IDENTIFIER '++'
+	| IDENTIFIER '--'
+	| IDENTIFIER SHORTOP elemToAssign
+	| IDENTIFIER SHORTOP elemToAssign
+	| IDENTIFIER SHORTOP elemToAssign
+	| IDENTIFIER SHORTOP elemToAssign;
+
 block: '{' statement* '}';
 
 ifStat: 'if' '(' boolExpr ')' block ('else' block)?;
 
 whileStat: 'while' '(' boolExpr ')' block;
+
+forStat: 'for' '(' variableAssign ';' boolExpr ';' (variableAssign | shortExpression) ')' block;
     
 boolExpr: boolExpr ('&&' | '||') boolExpr
     | NEG boolExpr
@@ -68,9 +79,7 @@ PRINT: 'print';
 READ: 'read';
 BOOLEAN: 'true' | 'false';
 COMPARSION: '==' | '!=' | '<' | '>' | '<=' | '>=';
-// AND: '&&';
-// OR: '||';
-// XOR: '^';
+SHORTOP: '+=' | '-=' | '*=' | '/=';
 NEG: '!';
 PLUS: '+';
 MINUS: '-';

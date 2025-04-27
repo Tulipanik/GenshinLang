@@ -33,6 +33,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         return str(self.module)
 
     def _generate_from_ast(self, ast):
+        # print(ast)
         for node in ast:
             # print(isinstance(node, GenshinLangParser.PrintStatContext))
             if isinstance(node, GenshinLangParser.VariableContext):
@@ -62,6 +63,10 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
 
             elif isinstance(node, GenshinLangParser.ExpressionContext):
                 self.generate_expression(node)
+            
+            elif isinstance(node, GenshinLangParser.ShortExpressionContext):
+                print("elo")
+                self.generate_short_expression(node)
 
             elif isinstance(node, GenshinLangParser.ReadStatContext):
                 self.read(node)
