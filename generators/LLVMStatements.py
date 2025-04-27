@@ -70,7 +70,6 @@ class LLVMStatementMixin:
 
     def generate_if_statement(self, ctx: GenshinLangParser.IfStatContext):
         cond = self._bool_expr_evaluator(ctx.boolExpr())
-        print(cond)
         if cond is None:
             print("Ewaluacja warunku zwróciła None!")
             sys.exit(1)
@@ -126,12 +125,11 @@ class LLVMStatementMixin:
         body_block = self.builder.append_basic_block('for_body')
         end_block = self.builder.append_basic_block('for_end')
         
-        if ctx.variableAssign().TYPE():
-            generateVariableDeclaration = self.generate_variable_declaration(ctx.variableAssign().IDENTIFIER().getText(), ctx.variableAssign().TYPE().getText())
-            self.scopeStack[-1][ctx.variableAssign().IDENTIFIER().getText()] = generateVariableDeclaration
+        if ctx.variableAssign():
+            if ctx.variableAssign()[0].TYPE():
+                self.generate_variable_declaration(ctx.variableAssign(0).IDENTIFIER().getText(), ctx.variableAssign()[0].TYPE().getText())
 
-        if ctx.variableAssign().ASSIGN():
-            self.generate_variable_assigntent(ctx.variableAssign().IDENTIFIER().getText(), ctx.elemToAssign())
+            self.generate_variable_assignment(ctx.variableAssign(0).IDENTIFIER().getText(), ctx.variableAssign()[0].elemToAssign())
 
         self.builder.branch(cond_block)
         self.builder.position_at_end(cond_block)
@@ -141,14 +139,6 @@ class LLVMStatementMixin:
             print("Ewaluacja warunku zwróciła None!")
             sys.exit(1)
 
-        if ctx.variableAssign():
-            if self.expression().TYPE():
-                print(f"W tym miejscu nie można zadeklarować zmiennej!")
-                sys.exit(1)
-
-            self.generate_variable_assigment(ctx.variableAssign().IDENTIFIER().getText(), ctx.elemToAssign())
-        elif ctx.shortExpression():
-            self.generate_short_expression(ctx.shortExpression())
 
         self.builder.cbranch(cond, body_block, end_block)
 
@@ -156,6 +146,14 @@ class LLVMStatementMixin:
         
         statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
         self._generate_from_ast(statements)
+        if ctx.variableAssign(1):
+            if ctx.variableAssign(1).TYPE():
+                print(f"W tym miejscu nie można zadeklarować zmiennej!")
+                sys.exit(1)
+
+            self.generate_variable_assignment(ctx.variableAssign(1).IDENTIFIER().getText(), ctx.variableAssign(1).elemToAssign())
+        elif ctx.shortExpression():
+            self.generate_short_expression(ctx.shortExpression())
 
         self.builder.branch(cond_block)
         self.builder.position_at_end(end_block)

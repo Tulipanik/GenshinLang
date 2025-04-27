@@ -33,9 +33,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         return str(self.module)
 
     def _generate_from_ast(self, ast):
-        # print(ast)
         for node in ast:
-            # print(isinstance(node, GenshinLangParser.PrintStatContext))
             if isinstance(node, GenshinLangParser.VariableContext):
                 var_name = node.IDENTIFIER().getText()
                 if var_name in self.variables:
@@ -58,14 +56,12 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
                     sys.exit(1)
 
             elif isinstance(node, GenshinLangParser.PrintStatContext):
-                print("siema")
                 self.generate_print_statement(node)
 
             elif isinstance(node, GenshinLangParser.ExpressionContext):
                 self.generate_expression(node)
             
             elif isinstance(node, GenshinLangParser.ShortExpressionContext):
-                print("elo")
                 self.generate_short_expression(node)
 
             elif isinstance(node, GenshinLangParser.ReadStatContext):
@@ -73,6 +69,9 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
             
             elif isinstance(node, GenshinLangParser.IfStatContext):
                 self.generate_if_statement(node)
+
+            elif isinstance(node, GenshinLangParser.ForStatContext):
+                self.generate_for_statement(node)
 
             elif isinstance(node, GenshinLangParser.WhileStatContext):
                 self.generate_while_statement(node)

@@ -26,9 +26,7 @@ class LLVMExpressionMixin:
 
         value1 = self.builder.load(self.scopeStack[-1][ident])
 
-        print(ctx.elemToAssign())
-
-        if ctx.elemToAssign().expression():
+        if ctx.elemToAssign():
             value2 = self.generate_expression(ctx.elemToAssign().expression())
             value1, value2 = self._check_type_compability(value1, value2)
             match ctx.SHORTOP().getText():

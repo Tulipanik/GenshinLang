@@ -14,12 +14,10 @@ class GenshinASTBuilder(GenshinLangListener):
     def exitVariable(self, ctx:GenshinLangParser.VariableContext):
         if not (self.inside_stat):
             self.ast.append(ctx)
-            print(ctx.getText())
 
     def exitVariableAssign(self, ctx:GenshinLangParser.VariableAssignContext):
         if not (self.inside_stat):
             self.ast.append(ctx)
-            print(ctx.getText())
 
     def exitElemToAssign(self, ctx:GenshinLangParser.ElemToAssignContext):
         if not (self.inside_stat):

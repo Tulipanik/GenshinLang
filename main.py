@@ -4,7 +4,6 @@ from generated.GenshinLangLexer import GenshinLangLexer
 from generated.GenshinLangParser import GenshinLangParser
 from GenshinLangErrorListener import GenshinLangErrorListener
 from GenshinLangActions import GenshinASTBuilder
-# from LLVMGenerator import LLVMGenerator
 from generators.LLVMBase import LLVMBase
 
 def main():
