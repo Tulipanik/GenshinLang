@@ -1,4 +1,5 @@
 import sys
+import re
 from llvmlite import ir, binding
 
 from .LLVMConfig import LLVMConfigMixin
@@ -30,7 +31,20 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
     def generate(self, ast):
         self._generate_from_ast(ast)
         self.builder.ret(ir.Constant(ir.IntType(32), 0))
+        try:
+            parsed_module = binding.parse_assembly(str(self.module))
+            parsed_module.verify()
+        except RuntimeError as e:
+            error_text = str(e)
+            problematic_vars = re.findall(r'%\w+', error_text)
+            if problematic_vars:
+                print("Wykryto zmienne, które mogą być nieprzypisane:")
+                for var in set(problematic_vars):
+                    print(f"  - {var[1:]}")
+
+            sys.exit(1)
         return str(self.module)
+        
 
     def _generate_from_ast(self, ast):
         for node in ast:

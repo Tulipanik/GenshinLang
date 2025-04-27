@@ -1,5 +1,6 @@
 import sys
 import antlr4
+from llvmlite import binding
 from generated.GenshinLangLexer import GenshinLangLexer
 from generated.GenshinLangParser import GenshinLangParser
 from GenshinLangErrorListener import GenshinLangErrorListener

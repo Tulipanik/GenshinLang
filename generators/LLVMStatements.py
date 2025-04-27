@@ -1,5 +1,6 @@
 import sys
 import re
+import copy
 from llvmlite import ir
 from generated.GenshinLangParser import GenshinLangParser
 
@@ -146,6 +147,7 @@ class LLVMStatementMixin:
         
         statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
         self._generate_from_ast(statements)
+
         if ctx.variableAssign(1):
             if ctx.variableAssign(1).TYPE():
                 print(f"W tym miejscu nie można zadeklarować zmiennej!")
