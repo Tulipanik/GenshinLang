@@ -74,7 +74,7 @@ factor:
 	| IDENTIFIER '[' expression ']' '[' expression ']';
 
 // Lexer
-TYPE: 'int' | 'float' | 'double' | 'boolean';
+TYPE: 'int' | 'float' | 'double' | 'var' | 'boolean';
 PRINT: 'print';
 READ: 'read';
 BOOLEAN: 'true' | 'false';

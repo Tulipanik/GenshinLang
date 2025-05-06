@@ -50,7 +50,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         for node in ast:
             if isinstance(node, GenshinLangParser.VariableContext):
                 var_name = node.IDENTIFIER().getText()
-                if var_name in self.variables:
+                if var_name in self.scopeStack[-1]:
                     print(f'Zmienna {var_name} istnieje już w zakresie!')
                     sys.exit(1)
                 self.generate_variable_declaration(var_name, node.TYPE().getText())

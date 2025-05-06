@@ -8,7 +8,7 @@ class LLVMVariablesMixin:
             ptr = self.builder.alloca(ir.IntType(32), name=ident)
         elif type == 'float':
             ptr = self.builder.alloca(ir.FloatType(), name=ident)
-        elif type == 'double':
+        elif type == 'double' or type == 'var':
             ptr = self.builder.alloca(ir.DoubleType(), name=ident)
         self.scopeStack[-1][ident] = ptr
 

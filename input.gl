@@ -3,6 +3,7 @@
 int x
 float y
 int z
+var u
 
 // deklaracja z przypisaniem zmiennej
 
@@ -14,6 +15,9 @@ double b = 3.02
 x = -2
 y = 3.1
 z = y+a
+
+u = 5.0
+u = 7
 
 // operacje wejscia - wyjscia
 print("witam")
