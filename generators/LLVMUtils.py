@@ -20,6 +20,24 @@ class LLVMUtilsMixin:
             sys.exit(-1)
 
         return self.builder.load(ptr)
+
+
+    def _load_all_variables(self, func_indents):
+        scopeIdx = len(self.scopeStack) - 1
+        print(func_indents)
+
+        loaded_variables = set(func_indents)
+
+        while not(scopeIdx == -1):
+            for variable in self.scopeStack[scopeIdx]:
+                # print(variable)
+                if not (variable in loaded_variables):
+                    self.builder.load(self.scopeStack[scopeIdx][variable])
+
+                loaded_variables.add(variable)
+            scopeIdx -= 1
+
+
     def _check_type_compability(self, value1, value2):
         type1 = value1.type
         type2 = value2.type

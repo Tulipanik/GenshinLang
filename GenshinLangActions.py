@@ -54,7 +54,8 @@ class GenshinASTBuilder(GenshinLangListener):
             self.ast.append(ctx)
 
     def enterIfStat(self, ctx: GenshinLangParser.IfStatContext):
-        self.ast.append(ctx)
+        if not (self.inside_stat):
+            self.ast.append(ctx)
         self.inside_stat.append(True)
         
     def exitIfStat(self, ctx: GenshinLangParser.IfStatContext):

@@ -113,23 +113,31 @@ function elo (int x){
 }
 
 y=elo(3)
-
-// function siema (int x) {
-//     print("damn")
-//     elo(x)
-//     return 3
-// }
-// 
-// siema(6)
-// 
-// function heja (int x) {
-//     print("siemano")
-//     function elo (int y) {
-//         // print(x)
-//         print ("siemanko inside")
-//     }
-//     elo(x)
-// }
-// 
-// heja(x)
 print("Zmienna y", y)
+
+function siema (int x) {
+    print("damn")
+    elo(x)
+    return 3
+}
+
+siema(6)
+
+function eloelo (int x ) {
+    if (x) {
+        print("w if: ", x)
+    }
+}
+
+function heja (int x) {
+    print("siemano")
+    //print(a)
+    function elo_ziom (int y) {
+        //print(x)
+        print ("siemanko inside")
+    }
+    elo(x)
+    elo_ziom(x)
+}
+
+heja(x)

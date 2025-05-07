@@ -24,6 +24,8 @@ class LLVMVariablesMixin:
 
             idx -= 1
 
+        print("loaded")
+
         if not(ptr):
             print(f"Przypisanie do niezadeklarowanej zmiennej '{ident}'!")
             sys.exit(1)

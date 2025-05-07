@@ -22,7 +22,6 @@ class LLVMExpressionMixin:
         ident = ctx.IDENTIFIER().getText()
 
         value1 = self._load_variable(ident)
-        print(value1)
 
         if ctx.elemToAssign():
             value2 = self.generate_expression(ctx.elemToAssign().expression())

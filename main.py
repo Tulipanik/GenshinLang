@@ -35,8 +35,6 @@ def main():
     walker = antlr4.ParseTreeWalker()
     walker.walk(ast_builder, tree)
 
-    print(ast_builder.ast)
-
     ir_generator = LLVMBase()
     llvm_ir = ir_generator.generate(ast_builder.ast)
 

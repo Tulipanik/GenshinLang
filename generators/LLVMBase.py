@@ -25,13 +25,13 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         self._create_execution_engine()
         self._declare_print_function()
         self._declare_scanf_function()
-        # self.variables = {}
         self.scopeStack = [{}]
-        self.function = None 
+        self.function = None
         self.inside_function = False
-        # self.return_type = None
         self.has_returned = None
         self.is_assigning = False
+        self.functionScope = [set()]
+
 
     def generate(self, ast):
         self._generate_from_ast(ast)

@@ -174,6 +174,10 @@ class LLVMStatementMixin:
     def generate_functionDeclaration(self, ctx: GenshinLangParser.FunctionDeclarationContext):
         self.inside_function = True
         original_name = ctx.IDENTIFIER().getText()
+
+        self.functionScope[-1].add(original_name)
+        self.functionScope.append(set(self.functionScope[-1]))
+        print(self.functionScope)
         
         if self.function:
             func_name = f"{self.function.name}_{original_name}"
@@ -229,12 +233,12 @@ class LLVMStatementMixin:
         self.return_type = return_type
 
         self.scopeStack.append(self.scopeStack[-1].copy())
+        # self._load_all_variables(params)
 
         for i, param_name in enumerate(params):
             param_ptr = self.builder.alloca(param_types[i], name=param_name)
             self.builder.store(func.args[i], param_ptr)
             self.scopeStack[-1][param_name] = param_ptr
-
         statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
         self._generate_from_ast(statements)
         
@@ -252,6 +256,7 @@ class LLVMStatementMixin:
         self.has_returned = None
         self.inside_function = True
         self.scopeStack.pop()
+        self.functionScope.pop()
 
     def function_contains_return(self, block_ctx):
         for child in block_ctx.getChildren():
@@ -266,24 +271,19 @@ class LLVMStatementMixin:
     def generate_returnStatement(self, ctx: GenshinLangParser.ReturnStatementContext):
         if ctx.expression():
             value = self.generate_expression(ctx.expression())
-            if not self.return_type:
-                print("Błąd: użyto instrukcji 'return' w funkcji bez zadeklarowanego typu zwrotnego.")
-                sys.exit(1)
-            if value.type != self.return_type:
-                print(f"Błąd typu: nie można zwrócić {value.type} z funkcji oczekującej {self.return_type}")
-                sys.exit(1)
             self.builder.ret(value)
         else:
-            # if not isinstance(self.return_type, ir.VoidType):
-            #     print(f"Błąd typu: funkcja oczekuje typu zwrotnego {self.return_type}, ale instrukcja 'return' jest pusta")
-            #     sys.exit(1)
             self.builder.ret_void()
         self.has_returned = True
-
 
     
     def generate_functionCall(self, ctx: GenshinLangParser.FunctionCallContext):
         func_name = ctx.IDENTIFIER().getText()
+        # print(self.functionScope)
+
+        if not(func_name in self.functionScope[-1]):
+            print("Funkcja nie istnieje w podanym zasięgu!")
+            sys.exit(-1)
 
         func = None
         for scope in reversed(self.scopeStack):
