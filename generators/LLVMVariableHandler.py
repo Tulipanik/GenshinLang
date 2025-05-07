@@ -13,20 +13,58 @@ class LLVMVariablesMixin:
         self.scopeStack[-1][ident] = ptr
 
     def generate_variable_assignment(self, ident, value: GenshinLangParser.ElemToAssignContext):
-        ptr = self.scopeStack[-1][ident]
-        if ptr is None:
-            print(f"Zmienna '{ident}' jest niezadeklarowana!")
+        ptr = None
+        idx = len(self.scopeStack) - 1
+
+        while not(idx == -1):
+            ptr = ident in self.scopeStack[idx]
+            if ptr:
+                ptr = self.scopeStack[idx][ident]
+                break
+
+            idx -= 1
+
+        if not(ptr):
+            print(f"Przypisanie do niezadeklarowanej zmiennej '{ident}'!")
             sys.exit(1)
 
         expression_value = self.generate_expression(value.expression())
 
-        if isinstance(self.scopeStack[-1][ident].type.pointee, ir.FloatType):
+        if isinstance(ptr.type.pointee, ir.FloatType):
             expression_value = self._convert_double_to_float(expression_value)
-        elif isinstance(self.scopeStack[-1][ident].type.pointee, ir.IntType):
+        elif isinstance(ptr.type.pointee, ir.IntType):
             expression_value = self._convert_double_to_int(expression_value)
 
         if expression_value is None:
-            print(f"Błąd ewaluacji eksprecji '{value}'!")
+            print(f"Błąd ewaluacji ekspresji '{value}'!")
             sys.exit(1)
         
         self.builder.store(expression_value, ptr)
+
+    
+    def generate_short_variable_assignment(self, ident, value):
+        ptr = None
+        idx = len(self.scopeStack) - 1
+
+        while not(idx == -1):
+            ptr = ident in self.scopeStack[idx]
+            if ptr:
+                ptr = self.scopeStack[idx][ident]
+                break
+
+            idx -= 1
+
+        if not(ptr):
+            print(f"Przypisanie do niezadeklarowanej zmiennej '{ident}'!")
+            sys.exit(1)
+
+        if isinstance(ptr.type.pointee, ir.FloatType):
+            value = self._convert_double_to_float(value)
+        elif isinstance(ptr.type.pointee, ir.IntType):
+            value = self._convert_double_to_int(value)
+
+        if value is None:
+            print(f"Błąd ewaluacji ekspresji '{value}'!")
+            sys.exit(1)
+        
+        self.builder.store(value, ptr)

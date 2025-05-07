@@ -1,6 +1,25 @@
+import sys
 from llvmlite import ir
 
 class LLVMUtilsMixin:
+    def _load_variable(self, ident):
+        ptr = None
+        idx = len(self.scopeStack) - 1
+
+        while not(idx == -1):
+            ptr = ident in self.scopeStack[idx]
+
+            if ptr:
+                ptr = self.scopeStack[idx][ident]
+                break
+
+            idx -= 1
+
+        if ptr is None:
+            print(f"Zmienna '{ident}' użyta przed zadeklarowaniem!")
+            sys.exit(-1)
+
+        return self.builder.load(ptr)
     def _check_type_compability(self, value1, value2):
         type1 = value1.type
         type2 = value2.type

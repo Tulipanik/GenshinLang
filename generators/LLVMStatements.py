@@ -79,6 +79,8 @@ class LLVMStatementMixin:
         else_block = self.builder.append_basic_block('if_else') if ctx.block(1) else None
         merge_block = self.builder.append_basic_block('if_end')
 
+        self.scopeStack.append({})
+
         if else_block:
             self.builder.cbranch(cond, then_block, else_block)
         else:
@@ -95,6 +97,7 @@ class LLVMStatementMixin:
             self._generate_from_ast(statements)
             self.builder.branch(merge_block)
 
+        self.scopeStack.pop()
         self.builder.position_at_end(merge_block)
 
     def generate_while_statement(self, ctx: GenshinLangParser.WhileStatContext):
@@ -114,9 +117,13 @@ class LLVMStatementMixin:
         self.builder.cbranch(cond, body_block, end_block)
 
         self.builder.position_at_end(body_block)
+
+        self.scopeStack.append({})
         
         statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
         self._generate_from_ast(statements)
+
+        self.scopeStack.pop()
 
         self.builder.branch(cond_block)
         self.builder.position_at_end(end_block)
@@ -144,9 +151,13 @@ class LLVMStatementMixin:
         self.builder.cbranch(cond, body_block, end_block)
 
         self.builder.position_at_end(body_block)
+
+        self.scopeStack.append({})
         
         statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
         self._generate_from_ast(statements)
+
+        self.scopeStack.pop()
 
         if ctx.variableAssign(1):
             if ctx.variableAssign(1).TYPE():

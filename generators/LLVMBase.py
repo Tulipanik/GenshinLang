@@ -63,11 +63,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
                     else:
                         print(f"Redeklaracja zmiennej '{var_name}'!")
                         sys.exit(1)
-                if var_name in  self.scopeStack[-1]:
-                    self.generate_variable_assignment(var_name, node.elemToAssign())
-                else:
-                    print(f"Przypisanie do niezadeklarowanej zmiennej '{var_name}'!")
-                    sys.exit(1)
+                self.generate_variable_assignment(var_name, node.elemToAssign())
 
             elif isinstance(node, GenshinLangParser.PrintStatContext):
                 self.generate_print_statement(node)

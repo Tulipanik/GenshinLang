@@ -21,10 +21,8 @@ class LLVMExpressionMixin:
     def generate_short_expression(self, ctx: GenshinLangParser.ShortExpressionContext):
         ident = ctx.IDENTIFIER().getText()
 
-        if ident not in self.scopeStack[-1]:
-            print(f"Zmienna '{ident}' użyta przed zadeklarowaniem!")
-
-        value1 = self.builder.load(self.scopeStack[-1][ident])
+        value1 = self._load_variable(ident)
+        print(value1)
 
         if ctx.elemToAssign():
             value2 = self.generate_expression(ctx.elemToAssign().expression())
@@ -46,16 +44,7 @@ class LLVMExpressionMixin:
                 case "--":
                     value1 = self.operation_maker(value1, value2, "-")
 
-
-        if isinstance(self.scopeStack[-1][ident].type.pointee, ir.FloatType):
-            value1 = self._convert_double_to_float(value1)
-        elif isinstance(self.scopeStack[-1][ident].type.pointee, ir.IntType):
-            value1 = self._convert_double_to_int(value1)
-        
-        self.builder.store(value1, self.scopeStack[-1][ident])
-
-
-
+        self.generate_short_variable_assignment(ident, value1)
 
     def generate_term(self, ctx: GenshinLangParser.TermContext):
         value1 = self.generate_factor(ctx.factor(0))
@@ -75,12 +64,8 @@ class LLVMExpressionMixin:
         elif ctx.NUMBER():
             return ir.Constant(ir.DoubleType(), float(ctx.NUMBER().getText()))
         elif ctx.IDENTIFIER():
-            if ctx.IDENTIFIER().getText() in self.scopeStack[-1]:
-                ptr = self.scopeStack[-1][ctx.IDENTIFIER().getText()]
-                return self.builder.load(ptr)
-            else:
-                print(f"Zmienna '{ctx.IDENTIFIER().getText()}' użyta przed zadeklarowaniem!")
-                sys.exit(1)        
+
+            return self._load_variable(ctx.IDENTIFIER().getText())      
         else:
             print("Nieobsłużony typ czynnika!")
             sys.exit(1)

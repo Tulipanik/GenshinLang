@@ -67,4 +67,15 @@ class GenshinASTBuilder(GenshinLangListener):
 
     def exitForStat(self, ctx: GenshinLangParser.ForStatContext):
         self.inside_stat.pop()
+
+    # def enterFunctionDeclaration(self, ctx: GenshinLangParser.FunctionDeclarationContext):
+    #     self.ast.append(ctx)
+    #     self.inside_stat.append(True)
+
+    # def exitFunctionDeclaration(self, ctx: GenshinLangParser.FunctionDeclarationContext):
+    #     self.inside_stat.pop()
+
+    # def enterFunctionCall(self, ctx: GenshinLangParser.FunctionCallContext):
+    #     if not (self.inside_stat):
+    #         self.ast.append(ctx)
     

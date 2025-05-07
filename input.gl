@@ -3,7 +3,7 @@
 int x
 float y
 int z
-var u
+var g
 
 // deklaracja z przypisaniem zmiennej
 
@@ -16,8 +16,8 @@ x = -2
 y = 3.1
 z = y+a
 
-u = 5.0
-u = 7
+g = 5.0
+g = 7
 
 // operacje wejscia - wyjscia
 print("witam")
@@ -76,21 +76,27 @@ if (a) {
     }
 }
 
+var h = 3
 if (!a) {
-    print("heja2")
+    int h = 7
+    print(h)
+    a = 4
+    print(a)
 }
 
 while (a > 2) {
     a = a - 1
-    print("siema2")
+    h = h + 1
+    print("Zmienna h:", h)
 }
 
 int j = 0
 for (j = 3; j <= 10; j+=2) {
-    int g = 0
+    g = 0
+    g += 1
     print("siema", j)
     b++
-    print(g)
+    print("Zmienna g:", g)
 }
 
 for (int i = 0; i <= 10; i = i + 2) {
