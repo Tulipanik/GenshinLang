@@ -171,5 +171,157 @@ class LLVMStatementMixin:
         self.builder.branch(cond_block)
         self.builder.position_at_end(end_block)
 
+    def generate_functionDeclaration(self, ctx: GenshinLangParser.FunctionDeclarationContext):
+        self.inside_function = True
+        original_name = ctx.IDENTIFIER().getText()
+        
+        if self.function:
+            func_name = f"{self.function.name}_{original_name}"
+        else:
+            func_name = original_name
+
+        suffix = 0
+        base_name = func_name
+        while func_name in self.module.globals:
+            suffix += 1
+            func_name = f"{base_name}_{suffix}"
+
+        params = []
+        param_types = []
+
+        if ctx.paramList():
+            param_list = list(ctx.paramList().getChildren())
+            for i in range(0, len(param_list), 3): 
+                if i + 1 < len(param_list):
+                    type_str = param_list[i].getText()
+                    param_name = param_list[i + 1].getText()
+                    params.append(param_name)
+                    if type_str == 'int':
+                        param_types.append(ir.IntType(32))
+                    elif type_str == 'float':
+                        param_types.append(ir.FloatType())
+                    elif type_str == 'double':
+                        param_types.append(ir.DoubleType())
+                    elif type_str == 'boolean':
+                        param_types.append(ir.IntType(1))
+                    elif type_str == 'var':
+                        param_types.append(ir.DoubleType())
+                    else:
+                        print(f"Unknown type: {type_str}")
+                        sys.exit(1)
+
+        if self.function_contains_return(ctx.block()):
+            return_type = ir.DoubleType()
+        else:
+            return_type = ir.VoidType()
+
+        func_type = ir.FunctionType(return_type, param_types)
+        func = ir.Function(self.module, func_type, name=func_name)
+        self.scopeStack[-1][original_name] = func
+
+        entry_block = func.append_basic_block('entry')
+
+        old_builder = self.builder
+        old_function = self.function
+
+        self.builder = ir.IRBuilder(entry_block)
+        self.function = func
+        self.return_type = return_type
+
+        self.scopeStack.append(self.scopeStack[-1].copy())
+
+        for i, param_name in enumerate(params):
+            param_ptr = self.builder.alloca(param_types[i], name=param_name)
+            self.builder.store(func.args[i], param_ptr)
+            self.scopeStack[-1][param_name] = param_ptr
+
+        statements = [i.getChild(0) for i in list(ctx.block().getChildren())]
+        self._generate_from_ast(statements)
+        
+
+
+        if not self.builder.block.is_terminated:
+            if isinstance(return_type, ir.VoidType):
+                self.builder.ret_void()
+            else:
+                self.builder.ret(ir.Constant(ir.DoubleType(), 0.0))  
+
+        self.return_type = None
+        self.builder = old_builder
+        self.function = old_function
+        self.has_returned = None
+        self.inside_function = True
+        self.scopeStack.pop()
+
+    def function_contains_return(self, block_ctx):
+        for child in block_ctx.getChildren():
+            if child.getText() == 'return':
+                return True
+            if hasattr(child, 'getChildren'):
+                if self.function_contains_return(child):
+                    return True
+        return False
+
+
+    def generate_returnStatement(self, ctx: GenshinLangParser.ReturnStatementContext):
+        if ctx.expression():
+            value = self.generate_expression(ctx.expression())
+            if not self.return_type:
+                print("Błąd: użyto instrukcji 'return' w funkcji bez zadeklarowanego typu zwrotnego.")
+                sys.exit(1)
+            if value.type != self.return_type:
+                print(f"Błąd typu: nie można zwrócić {value.type} z funkcji oczekującej {self.return_type}")
+                sys.exit(1)
+            self.builder.ret(value)
+        else:
+            # if not isinstance(self.return_type, ir.VoidType):
+            #     print(f"Błąd typu: funkcja oczekuje typu zwrotnego {self.return_type}, ale instrukcja 'return' jest pusta")
+            #     sys.exit(1)
+            self.builder.ret_void()
+        self.has_returned = True
+
+
+    
+    def generate_functionCall(self, ctx: GenshinLangParser.FunctionCallContext):
+        func_name = ctx.IDENTIFIER().getText()
+
+        func = None
+        for scope in reversed(self.scopeStack):
+            if func_name in scope:
+                func = scope[func_name]
+                break
+
+        if not func:
+            func = self.module.globals.get(func_name)
+
+        if not func or not isinstance(func, ir.Function):
+            print(f"Funkcja '{func_name}' nie została zadeklarowana!")
+            sys.exit(1)
+
+        args = []
+        if ctx.argumentList():
+            expected_types = [arg.type for arg in func.args]
+            arg_nodes = [child for child in ctx.argumentList().getChildren() if child.getText() != ',']
+
+            if len(arg_nodes) != len(expected_types):
+                print(f"Funkcja '{func_name}' oczekuje {len(expected_types)} argumentów, otrzymano {len(arg_nodes)}")
+                sys.exit(1)
+
+            for arg_node, expected_type in zip(arg_nodes, expected_types):
+                arg_value = self.generate_expression(arg_node)
+
+                if arg_value.type != expected_type:
+                    if isinstance(expected_type, ir.IntType) and isinstance(arg_value.type, ir.DoubleType):
+                        arg_value = self.builder.fptosi(arg_value, expected_type)
+                    elif isinstance(expected_type, ir.DoubleType) and isinstance(arg_value.type, ir.IntType):
+                        arg_value = self.builder.sitofp(arg_value, expected_type)
+                    else:
+                        print(f"Nie można przekonwertować typu argumentu {arg_value.type} na {expected_type}")
+                        sys.exit(1)
+
+                args.append(arg_value)
+
+        return self.builder.call(func, args, name=f"{func_name}_call")
+
                 
 

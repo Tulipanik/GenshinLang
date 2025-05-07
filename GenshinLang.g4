@@ -12,14 +12,25 @@ statement:
 	| matrixAssign
 	| printStat
 	| readStat
+	| functionCall
 	| expressionStat
 	| shortExpression
 	| ifStat
 	| whileStat
-	| forStat;
+	| forStat
+	| functionDeclaration;
+
+functionDeclaration: 'function' IDENTIFIER '(' paramList? ')' block;
+
+functionCall: IDENTIFIER '(' argumentList? ')';
 
 variable: TYPE IDENTIFIER;
 variableAssign: TYPE? IDENTIFIER ASSIGN elemToAssign;
+
+paramList:TYPE IDENTIFIER (',' TYPE IDENTIFIER)*;
+
+argumentList:
+	expression (',' expression)*;
 
 arrayElemAssign:
 	IDENTIFIER '[' expression ']' ASSIGN elemToAssign;
@@ -52,7 +63,8 @@ shortExpression: IDENTIFIER '++'
 	| IDENTIFIER SHORTOP elemToAssign
 	| IDENTIFIER SHORTOP elemToAssign;
 
-block: '{' statement* '}';
+block: '{' (statement | functionBlock)* '}';
+functionBlock: functionDeclaration | returnStatement;
 
 ifStat: 'if' '(' boolExpr ')' block ('else' block)?;
 
@@ -69,9 +81,12 @@ boolExpr: boolExpr ('&&' | '||') boolExpr
 factor:
 	MINUS NUMBER
 	| NUMBER
+	| functionCall
 	| IDENTIFIER
 	| IDENTIFIER '[' expression ']'
 	| IDENTIFIER '[' expression ']' '[' expression ']';
+
+returnStatement: 'return' expression?;
 
 // Lexer
 TYPE: 'int' | 'float' | 'double' | 'var' | 'boolean';

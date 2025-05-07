@@ -64,8 +64,10 @@ class LLVMExpressionMixin:
         elif ctx.NUMBER():
             return ir.Constant(ir.DoubleType(), float(ctx.NUMBER().getText()))
         elif ctx.IDENTIFIER():
-
-            return self._load_variable(ctx.IDENTIFIER().getText())      
+            return self._load_variable(ctx.IDENTIFIER().getText())  
+        elif ctx.functionCall():
+            call_value = self.generate_functionCall(ctx.functionCall())
+            return call_value    
         else:
             print("Nieobsłużony typ czynnika!")
             sys.exit(1)

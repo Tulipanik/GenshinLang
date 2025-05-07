@@ -25,8 +25,13 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         self._create_execution_engine()
         self._declare_print_function()
         self._declare_scanf_function()
-        self.variables = {}
+        # self.variables = {}
         self.scopeStack = [{}]
+        self.function = None 
+        self.inside_function = False
+        # self.return_type = None
+        self.has_returned = None
+        self.is_assigning = False
 
     def generate(self, ast):
         self._generate_from_ast(ast)
@@ -85,3 +90,18 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
 
             elif isinstance(node, GenshinLangParser.WhileStatContext):
                 self.generate_while_statement(node)
+            
+            elif isinstance(node, GenshinLangParser.FunctionDeclarationContext):
+                self.generate_functionDeclaration(node)
+                 
+            elif isinstance(node, GenshinLangParser.FunctionCallContext):
+                if not self.is_assigning:
+                    self.generate_functionCall(node)
+
+            elif isinstance(node, GenshinLangParser.ReturnStatementContext):
+                if not(self.inside_function):
+                    print("return może występować tylko w zasięgu funkcji!")
+                    sys.exit(-1)
+                self.generate_returnStatement(node)
+                break
+            
