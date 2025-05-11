@@ -11,6 +11,7 @@ class GenshinASTBuilder(GenshinLangListener):
         self.inside_stat = []
         self.ast = []
         self.inside_variable_assign = False
+        self.inside_function = []
 
     def exitVariable(self, ctx:GenshinLangParser.VariableContext):
         if not (self.inside_stat):
@@ -76,6 +77,7 @@ class GenshinASTBuilder(GenshinLangListener):
         self.inside_stat.pop()
 
     def enterFunctionDeclaration(self, ctx: GenshinLangParser.FunctionDeclarationContext):
+        if 
         self.ast.append(ctx)
         self.inside_stat.append(True)
 
