@@ -3,7 +3,7 @@
 int x
 float y
 int z
-var g
+global var g
 
 // deklaracja z przypisaniem zmiennej
 
@@ -129,9 +129,14 @@ function eloelo (int x ) {
     }
 }
 
+a = 7
+y = 3
+g = 10
 function heja (int x) {
     print("siemano")
-    //print(a)
+    int y = 2
+    print("Zmienna g:", g)
+    // print(a)
     function elo_ziom (int y) {
         //print(x)
         print ("siemanko inside")
@@ -141,3 +146,4 @@ function heja (int x) {
 }
 
 heja(x)
+print(y)

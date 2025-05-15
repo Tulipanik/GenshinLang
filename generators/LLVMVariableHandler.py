@@ -12,6 +12,23 @@ class LLVMVariablesMixin:
             ptr = self.builder.alloca(ir.DoubleType(), name=ident)
         self.scopeStack[-1][ident] = ptr
 
+    def generate_global_variable_declaration(self, ident, type):
+        var_type = ir.IntType(32)
+
+        if type == 'int':
+            var_type = ir.IntType(32)
+        elif type == 'float':
+            var_type = ir.FloatType()
+        elif type == 'double' or type == 'var':
+            var_type = ir.DoubleType()
+
+
+        global_var = ir.GlobalVariable(self.module, var_type, name=ident)
+        global_var.initializer = ir.Constant(var_type, 0)
+        global_var.global_constant = False
+
+        self.global_scope[ident] = global_var
+
     def generate_variable_assignment(self, ident, value: GenshinLangParser.ElemToAssignContext):
         ptr = None
         idx = len(self.scopeStack) - 1
@@ -23,12 +40,13 @@ class LLVMVariablesMixin:
                 break
 
             idx -= 1
-
-        print("loaded")
-
+            
         if not(ptr):
-            print(f"Przypisanie do niezadeklarowanej zmiennej '{ident}'!")
-            sys.exit(1)
+            if ident in self.global_scope:
+                ptr = self.global_scope[ident]
+            else:  
+                print(f"Przypisanie do niezadeklarowanej zmiennej '{ident}'!")
+                sys.exit(1)
 
         expression_value = self.generate_expression(value.expression())
 
@@ -57,8 +75,11 @@ class LLVMVariablesMixin:
             idx -= 1
 
         if not(ptr):
-            print(f"Przypisanie do niezadeklarowanej zmiennej '{ident}'!")
-            sys.exit(1)
+            if ident in self.global_scope:
+                ptr = self.global_scope[ident]
+            else:
+                print(f"Przypisanie do niezadeklarowanej zmiennej '{ident}'!")
+                sys.exit(1)
 
         if isinstance(ptr.type.pointee, ir.FloatType):
             value = self._convert_double_to_float(value)

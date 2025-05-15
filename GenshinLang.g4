@@ -24,8 +24,8 @@ functionDeclaration: 'function' IDENTIFIER '(' paramList? ')' block;
 
 functionCall: IDENTIFIER '(' argumentList? ')';
 
-variable: TYPE IDENTIFIER;
-variableAssign: TYPE? IDENTIFIER ASSIGN elemToAssign;
+variable: GLOBAL? TYPE IDENTIFIER;
+variableAssign: GLOBAL? TYPE? IDENTIFIER ASSIGN elemToAssign;
 
 paramList:TYPE IDENTIFIER (',' TYPE IDENTIFIER)*;
 
@@ -90,6 +90,7 @@ returnStatement: 'return' expression?;
 
 // Lexer
 TYPE: 'int' | 'float' | 'double' | 'var' | 'boolean';
+GLOBAL: 'global';
 PRINT: 'print';
 READ: 'read';
 BOOLEAN: 'true' | 'false';

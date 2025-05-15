@@ -77,7 +77,6 @@ class GenshinASTBuilder(GenshinLangListener):
         self.inside_stat.pop()
 
     def enterFunctionDeclaration(self, ctx: GenshinLangParser.FunctionDeclarationContext):
-        if 
         self.ast.append(ctx)
         self.inside_stat.append(True)
 

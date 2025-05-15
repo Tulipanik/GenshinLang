@@ -26,6 +26,7 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         self._declare_print_function()
         self._declare_scanf_function()
         self.scopeStack = [{}]
+        self.global_scope = {}
         self.function = None
         self.inside_function = False
         self.has_returned = None
@@ -55,15 +56,29 @@ class LLVMBase(LLVMConfigMixin, LLVMIOMixin, LLVMVariablesMixin,
         for node in ast:
             if isinstance(node, GenshinLangParser.VariableContext):
                 var_name = node.IDENTIFIER().getText()
-                if var_name in self.scopeStack[-1]:
+                if node.GLOBAL():
+                    if var_name in self.global_scope:
+                        print(f'Zmienna {var_name} istnieje już w zakresie globalnym!')
+                        sys.exit(1)
+                    else:
+                        self.generate_global_variable_declaration(var_name, node.TYPE().getText())
+                        continue
+                elif var_name in self.scopeStack[-1]:
                     print(f'Zmienna {var_name} istnieje już w zakresie!')
                     sys.exit(1)
                 self.generate_variable_declaration(var_name, node.TYPE().getText())
 
             if isinstance(node, GenshinLangParser.VariableAssignContext):
                 var_name = node.IDENTIFIER().getText()
+
                 if node.TYPE(): 
-                    if var_name not in self.scopeStack[-1]:
+                    if node.GLOBAL():
+                        if var_name not in self.global_scope:
+                            self.generate_global_variable_declaration(var_name, node.TYPE().getText())
+                        else:
+                            print(f"Redeklaracja globalnej zmiennej '{var_name}'!")
+                            sys.exit(1)
+                    elif var_name not in self.scopeStack[-1]:
                         self.generate_variable_declaration(var_name, node.TYPE().getText())
                     else:
                         print(f"Redeklaracja zmiennej '{var_name}'!")

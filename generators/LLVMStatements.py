@@ -177,7 +177,6 @@ class LLVMStatementMixin:
 
         self.functionScope[-1].add(original_name)
         self.functionScope.append(set(self.functionScope[-1]))
-        print(self.functionScope)
         
         if self.function:
             func_name = f"{self.function.name}_{original_name}"
@@ -232,8 +231,7 @@ class LLVMStatementMixin:
         self.function = func
         self.return_type = return_type
 
-        self.scopeStack.append(self.scopeStack[-1].copy())
-        # self._load_all_variables(params)
+        self.scopeStack.append({})
 
         for i, param_name in enumerate(params):
             param_ptr = self.builder.alloca(param_types[i], name=param_name)
@@ -279,7 +277,6 @@ class LLVMStatementMixin:
     
     def generate_functionCall(self, ctx: GenshinLangParser.FunctionCallContext):
         func_name = ctx.IDENTIFIER().getText()
-        # print(self.functionScope)
 
         if not(func_name in self.functionScope[-1]):
             print("Funkcja nie istnieje w podanym zasięgu!")
